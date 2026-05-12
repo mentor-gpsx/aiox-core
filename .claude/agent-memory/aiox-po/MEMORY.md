@@ -43,3 +43,4 @@
 
 ## Memory Index
 - [Finance Commission System project context](finance_commission_project.md) — NestJS/Prisma project at C:/Users/venda/finance-commission-system, Sprint 1 refinement reality (2026-05-12)
+- [Finance Sprint 2 story collision](finance_sprint2_story_collision.md) — Refusal pattern when spawn prompts ask for Supabase/RLS/raw-SQL/double-entry on this Prisma/service-auth project (2026-05-12)
