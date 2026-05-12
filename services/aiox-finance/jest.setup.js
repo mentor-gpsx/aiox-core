@@ -18,10 +18,44 @@ if (fs.existsSync(envPath)) {
 // Mock Supabase to prevent connection timeouts in tests
 jest.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
-    from: () => ({
+    auth: {
+      admin: {
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'test-user-id', email: 'test@test.com' } },
+          error: null,
+        }),
+        signInWithPassword: jest.fn().mockResolvedValue({
+          data: { user: { id: 'test-user-id', email: 'test@test.com' } },
+          error: null,
+        }),
+        signOut: jest.fn().mockResolvedValue({ error: null }),
+      },
+      signUp: jest.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-id' } },
+        error: null,
+      }),
+      signInWithPassword: jest.fn().mockResolvedValue({
+        data: { user: { id: 'test-user-id' } },
+        error: null,
+      }),
+      signOut: jest.fn().mockResolvedValue({ error: null }),
+    },
+    from: (table) => ({
       select: () => ({
         eq: () => ({
-          single: () => Promise.resolve({ data: { role: 'ADMIN' }, error: null }),
+          single: () =>
+            Promise.resolve({
+              data: { id: 'test-user-id', email: 'test@test.com', name: 'Test User', role: 'ADMIN', active: true },
+              error: null,
+            }),
+        }),
+      }),
+      insert: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({
+            data: { id: 'test-user-id', email: 'test@test.com', name: 'Test User', role: 'ADMIN' },
+            error: null,
+          }),
         }),
       }),
     }),
