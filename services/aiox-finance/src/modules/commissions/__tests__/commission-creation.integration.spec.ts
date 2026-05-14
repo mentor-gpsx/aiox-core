@@ -50,6 +50,31 @@ describe('CommissionCreation - Integration Tests', () => {
     service = module.get<CommissionCreationService>(CommissionCreationService);
     calculator = module.get<CommissionCalculatorService>(CommissionCalculatorService);
     auditLogger = module.get<AuditLoggerService>(AuditLoggerService);
+
+    // Default: no existing commission found (sale is fresh)
+    jest.spyOn(service as any, 'findCommissionBySaleId').mockResolvedValue(null);
+
+    // Default: supabase insert returns a commission echoing the input
+    (service as any).supabase = {
+      from: jest.fn().mockReturnValue({
+        insert: jest.fn().mockImplementation((payload: Record<string, unknown>) => ({
+          select: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: {
+                id: '770e8400-e29b-41d4-a716-446655440002',
+                ...payload,
+              },
+              error: null,
+            }),
+          }),
+        })),
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: null, error: null }),
+          }),
+        }),
+      }),
+    };
   });
 
   describe('End-to-End: Sale to Commission Creation', () => {
@@ -71,7 +96,10 @@ describe('CommissionCreation - Integration Tests', () => {
     });
 
     it('should reject commission creation when seller has no commission percentage', async () => {
-      const sellerWithoutPercentage = { ...mockSeller, commission_percentage: null };
+      const sellerWithoutPercentage = {
+        ...mockSeller,
+        commission_percentage: null as unknown as number,
+      };
 
       await expect(
         service.createCommissionFromSale(mockSale, sellerWithoutPercentage)
@@ -126,6 +154,19 @@ describe('CommissionCreation - Integration Tests', () => {
         { ...mockSale, id: 'sale-2' },
         { ...mockSale, id: 'sale-3' },
       ];
+
+      // Track created sale IDs; second attempt on same sale returns existing commission
+      const createdSaleIds = new Set<string>();
+      jest
+        .spyOn(service as any, 'findCommissionBySaleId')
+        .mockImplementation(async (...args: unknown[]) => {
+          const saleId = args[0] as string;
+          if (createdSaleIds.has(saleId)) {
+            return { ...mockCommission, sale_id: saleId };
+          }
+          createdSaleIds.add(saleId);
+          return null;
+        });
 
       for (const sale of sales) {
         await service.createCommissionFromSale(sale, mockSeller);

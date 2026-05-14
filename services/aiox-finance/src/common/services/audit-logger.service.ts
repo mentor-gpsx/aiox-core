@@ -18,11 +18,12 @@ export class AuditLoggerService {
 
   constructor() {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+    const supabaseServiceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error(
-        'Supabase configuration missing: SUPABASE_URL and SUPABASE_SERVICE_KEY required'
+        'Supabase configuration missing: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required'
       );
     }
 

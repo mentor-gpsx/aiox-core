@@ -35,9 +35,10 @@ describe('CommissionCalculatorService', () => {
       expect(result.toNumber()).toBeCloseTo(0.1, 2);
     });
 
-    it('should handle large amounts: 999999.99 × 10% = 99999.99', () => {
+    it('should handle large amounts: 999999.99 × 10% = 100000.00 (rounded)', () => {
+      // 999999.99 * 10 / 100 = 99999.999 → ROUND_HALF_UP → 100000.00
       const result = service.calculateCommission(999999.99, 10);
-      expect(result.toNumber()).toBeCloseTo(99999.99, 2);
+      expect(result.toFixed(2)).toBe('100000.00');
     });
 
     it('should round correctly: 1000 × 0.1% = 1.00', () => {
@@ -77,8 +78,9 @@ describe('CommissionCalculatorService', () => {
     });
 
     it('should handle edge case with many decimals', () => {
+      // 999.999 * 1.111 / 100 = 11.10998889 → ROUND_HALF_UP at 2dp → 11.11
       const result = service.calculateCommission(999.999, 1.111);
-      expect(result.toNumber()).toBeCloseTo(11.099, 2);
+      expect(result.toFixed(2)).toBe('11.11');
     });
   });
 
