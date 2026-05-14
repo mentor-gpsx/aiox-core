@@ -48,9 +48,7 @@ export class ReportExportValidator {
     }
     const id = Number(sellerId);
     if (isNaN(id) || id <= 0) {
-      throw new BadRequestException(
-        `Invalid seller_id: '${sellerId}'. Must be a positive number.`
-      );
+      throw new BadRequestException(`Invalid seller_id: '${sellerId}'. Must be a positive number.`);
     }
     return id;
   }

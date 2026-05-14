@@ -56,15 +56,11 @@ describe('ExportController', () => {
     });
 
     it('should throw BadRequestException when period is missing', async () => {
-      await expect(controller.exportReport(undefined)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(controller.exportReport(undefined)).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for invalid period', async () => {
-      await expect(controller.exportReport('invalid')).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(controller.exportReport('invalid')).rejects.toThrow(BadRequestException);
     });
 
     it('should throw BadRequestException for invalid product_id', async () => {

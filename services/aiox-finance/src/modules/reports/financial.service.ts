@@ -51,14 +51,7 @@ export class FinancialService {
     const summary: ExportSummary = {};
 
     // Sum all numeric fields
-    const numericFields = [
-      'revenue',
-      'expense',
-      'profit',
-      'cash_in',
-      'cash_out',
-      'net_cash',
-    ];
+    const numericFields = ['revenue', 'expense', 'profit', 'cash_in', 'cash_out', 'net_cash'];
 
     for (const field of numericFields) {
       const total = data.reduce(

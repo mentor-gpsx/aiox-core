@@ -1,9 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import {
-  ReportExportValidator,
-  ReportPeriod,
-  DateRange,
-} from '../report-export.validator';
+import { ReportExportValidator, ReportPeriod, DateRange } from '../report-export.validator';
 
 describe('ReportExportValidator', () => {
   describe('validatePeriod', () => {
@@ -16,9 +12,7 @@ describe('ReportExportValidator', () => {
     });
 
     it('should accept valid period: biweekly', () => {
-      expect(ReportExportValidator.validatePeriod('biweekly')).toBe(
-        ReportPeriod.BIWEEKLY
-      );
+      expect(ReportExportValidator.validatePeriod('biweekly')).toBe(ReportPeriod.BIWEEKLY);
     });
 
     it('should accept valid period: monthly', () => {
@@ -26,9 +20,7 @@ describe('ReportExportValidator', () => {
     });
 
     it('should reject invalid period', () => {
-      expect(() => ReportExportValidator.validatePeriod('invalid')).toThrow(
-        BadRequestException
-      );
+      expect(() => ReportExportValidator.validatePeriod('invalid')).toThrow(BadRequestException);
     });
   });
 
@@ -44,18 +36,12 @@ describe('ReportExportValidator', () => {
     });
 
     it('should reject zero or negative numbers', () => {
-      expect(() => ReportExportValidator.validateProductId(0)).toThrow(
-        BadRequestException
-      );
-      expect(() => ReportExportValidator.validateProductId(-5)).toThrow(
-        BadRequestException
-      );
+      expect(() => ReportExportValidator.validateProductId(0)).toThrow(BadRequestException);
+      expect(() => ReportExportValidator.validateProductId(-5)).toThrow(BadRequestException);
     });
 
     it('should reject non-numeric values', () => {
-      expect(() => ReportExportValidator.validateProductId('abc')).toThrow(
-        BadRequestException
-      );
+      expect(() => ReportExportValidator.validateProductId('abc')).toThrow(BadRequestException);
     });
   });
 
@@ -71,18 +57,12 @@ describe('ReportExportValidator', () => {
     });
 
     it('should reject zero or negative numbers', () => {
-      expect(() => ReportExportValidator.validateSellerId(0)).toThrow(
-        BadRequestException
-      );
-      expect(() => ReportExportValidator.validateSellerId(-10)).toThrow(
-        BadRequestException
-      );
+      expect(() => ReportExportValidator.validateSellerId(0)).toThrow(BadRequestException);
+      expect(() => ReportExportValidator.validateSellerId(-10)).toThrow(BadRequestException);
     });
 
     it('should reject non-numeric values', () => {
-      expect(() => ReportExportValidator.validateSellerId('xyz')).toThrow(
-        BadRequestException
-      );
+      expect(() => ReportExportValidator.validateSellerId('xyz')).toThrow(BadRequestException);
     });
   });
 
