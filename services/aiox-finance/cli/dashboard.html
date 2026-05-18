@@ -1088,7 +1088,7 @@ node manage-users.js delete --id [user-id]</code></pre>
           timeStyle: 'short'
         });
 
-        const canApprove = currentUserRole === 'ADMIN' || (currentUserRole && sale.seller_id === currentUserId);
+        const canApprove = currentUserRole === 'ADMIN';
         const actionBtn = sale.status === 'PENDING' && canApprove
           ? `<button onclick="approveSaleFromDashboard('${sale.id}')" style="padding: 6px 12px; font-size: 0.85em; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">✓ Aprovar</button>`
           : '<span style="color: #999;">-</span>';
@@ -1168,6 +1168,12 @@ node manage-users.js delete --id [user-id]</code></pre>
     async function approveSaleFromDashboard(saleId) {
       const client = getSupabaseClient();
       if (!client) return;
+
+      // Validação: apenas ADMIN pode aprovar
+      if (currentUserRole !== 'ADMIN') {
+        showMessage('❌ Apenas administradores podem aprovar vendas', 'error');
+        return;
+      }
 
       const btn = event.target;
       btn.disabled = true;
