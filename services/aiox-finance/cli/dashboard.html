@@ -568,13 +568,13 @@
       try {
         const { data: sales, error: salesError } = await client
           .from('sales')
-          .select('*')
+          .select('id, seller_id, customer_id, net_amount, payment_method, status, created_at')
           .order('created_at', { ascending: false })
           .limit(10);
 
         const { data: commissions, error: commError } = await client
           .from('commissions')
-          .select('*')
+          .select('id, seller_id, amount, percentage, status, created_at')
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -599,10 +599,25 @@
       }
 
       let html = '<div class="table-wrapper"><table>';
-      html += '<tr><th>ID</th><th>Vendedor</th><th>Líquido</th><th>Status</th><th>Data</th><th>Ação</th></tr>';
+      html += '<tr><th>ID</th><th>Vendedor</th><th>Cliente</th><th>Líquido</th><th>Método</th><th>Horário</th><th>Status</th><th>Ação</th></tr>';
 
       sales.forEach(sale => {
         const statusLabel = sale.status === 'PENDING' ? 'PENDENTE' : sale.status === 'APPROVED' ? 'APROVADA' : sale.status;
+        const methodLabel = {
+          'PIX': 'PIX',
+          'CREDIT_CARD': 'Crédito',
+          'DEBIT_CARD': 'Débito',
+          'BANK_TRANSFER': 'Transfer.',
+          'CHECK': 'Cheque',
+          'OTHER': 'Outro'
+        }[sale.payment_method] || sale.payment_method;
+
+        const dateTime = new Date(sale.created_at);
+        const horario = dateTime.toLocaleString('pt-BR', {
+          dateStyle: 'short',
+          timeStyle: 'short'
+        });
+
         const actionBtn = sale.status === 'PENDING'
           ? `<button onclick="approveSaleFromDashboard('${sale.id}')" style="padding: 6px 12px; font-size: 0.85em; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">✓ Aprovar</button>`
           : '<span style="color: #999;">-</span>';
@@ -610,9 +625,11 @@
         html += `<tr>
           <td><code style="font-size: 0.85em;">${sale.id.substring(0, 8)}</code></td>
           <td><code style="font-size: 0.85em;">${sale.seller_id.substring(0, 8)}</code></td>
+          <td><code style="font-size: 0.85em;">${sale.customer_id.substring(0, 8)}</code></td>
           <td class="money">R$ ${parseFloat(sale.net_amount).toFixed(2)}</td>
+          <td style="font-size: 0.9em;">${methodLabel}</td>
+          <td style="font-size: 0.85em;">${horario}</td>
           <td><span class="status ${sale.status.toLowerCase()}">${statusLabel}</span></td>
-          <td style="font-size: 0.9em;">${new Date(sale.created_at).toLocaleDateString('pt-BR')}</td>
           <td>${actionBtn}</td>
         </tr>`;
       });
