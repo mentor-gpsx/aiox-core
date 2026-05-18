@@ -599,16 +599,21 @@
       }
 
       let html = '<div class="table-wrapper"><table>';
-      html += '<tr><th>ID</th><th>Vendedor</th><th>Líquido</th><th>Status</th><th>Data</th></tr>';
+      html += '<tr><th>ID</th><th>Vendedor</th><th>Líquido</th><th>Status</th><th>Data</th><th>Ação</th></tr>';
 
       sales.forEach(sale => {
         const statusLabel = sale.status === 'PENDING' ? 'PENDENTE' : sale.status === 'APPROVED' ? 'APROVADA' : sale.status;
+        const actionBtn = sale.status === 'PENDING'
+          ? `<button onclick="approveSaleFromDashboard('${sale.id}')" style="padding: 6px 12px; font-size: 0.85em; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">✓ Aprovar</button>`
+          : '<span style="color: #999;">-</span>';
+
         html += `<tr>
           <td><code style="font-size: 0.85em;">${sale.id.substring(0, 8)}</code></td>
           <td><code style="font-size: 0.85em;">${sale.seller_id.substring(0, 8)}</code></td>
           <td class="money">R$ ${parseFloat(sale.net_amount).toFixed(2)}</td>
           <td><span class="status ${sale.status.toLowerCase()}">${statusLabel}</span></td>
           <td style="font-size: 0.9em;">${new Date(sale.created_at).toLocaleDateString('pt-BR')}</td>
+          <td>${actionBtn}</td>
         </tr>`;
       });
 
@@ -665,6 +670,35 @@
 
       document.getElementById(tab).classList.add('active');
       event.target.classList.add('active');
+    }
+
+    async function approveSaleFromDashboard(saleId) {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>';
+
+      try {
+        const { error } = await client
+          .from('sales')
+          .update({ status: 'APPROVED', updated_at: new Date().toISOString() })
+          .eq('id', saleId);
+
+        if (error) throw error;
+
+        showMessage('✅ Venda aprovada! Comissão será criada automaticamente...', 'success');
+
+        setTimeout(() => {
+          loadData();
+        }, 1000);
+
+      } catch (err) {
+        showMessage(`❌ Erro ao aprovar: ${err.message}`, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '✓ Aprovar';
+      }
     }
   </script>
 </body>
