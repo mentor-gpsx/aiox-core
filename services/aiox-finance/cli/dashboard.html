@@ -366,12 +366,18 @@
         <form id="saleForm">
           <div class="form-row">
             <div class="form-group">
-              <label>ID do Vendedor *</label>
-              <input type="text" id="sellerId" placeholder="uuid-do-vendedor" required>
+              <label>Vendedor *</label>
+              <select id="sellerId" required onchange="document.getElementById('sellerIdDisplay').value = this.value">
+                <option value="">-- Selecionar Vendedor --</option>
+              </select>
+              <input type="hidden" id="sellerIdDisplay">
             </div>
             <div class="form-group">
-              <label>ID do Cliente *</label>
-              <input type="text" id="customerId" placeholder="uuid-do-cliente" required>
+              <label>Cliente *</label>
+              <select id="customerId" required onchange="document.getElementById('customerIdDisplay').value = this.value">
+                <option value="">-- Selecionar Cliente --</option>
+              </select>
+              <input type="hidden" id="customerIdDisplay">
             </div>
           </div>
 
@@ -502,9 +508,70 @@
             showMessage('❌ Erro na conexão: ' + error.message, 'error');
           } else {
             showMessage('✅ Conexão bem-sucedida! Vendas no banco: ' + count, 'success');
+            loadUsersList();
+            loadCustomersList();
             loadData();
           }
         });
+    }
+
+    async function loadUsersList() {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const { data: users, error } = await client
+          .from('users')
+          .select('id, name, role')
+          .in('role', ['COMERCIAL', 'VENDEDOR', 'ADMIN'])
+          .order('name');
+
+        if (error) throw error;
+
+        const select = document.getElementById('sellerId');
+        const currentValue = select.value;
+
+        select.innerHTML = '<option value="">-- Selecionar Vendedor --</option>';
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id;
+          option.textContent = `${user.name} (${user.role})`;
+          select.appendChild(option);
+        });
+
+        if (currentValue) select.value = currentValue;
+      } catch (err) {
+        console.error('Erro ao carregar vendedores:', err);
+      }
+    }
+
+    async function loadCustomersList() {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const { data: customers, error } = await client
+          .from('customers')
+          .select('id, name')
+          .order('name');
+
+        if (error) throw error;
+
+        const select = document.getElementById('customerId');
+        const currentValue = select.value;
+
+        select.innerHTML = '<option value="">-- Selecionar Cliente --</option>';
+        customers.forEach(customer => {
+          const option = document.createElement('option');
+          option.value = customer.id;
+          option.textContent = customer.name;
+          select.appendChild(option);
+        });
+
+        if (currentValue) select.value = currentValue;
+      } catch (err) {
+        console.error('Erro ao carregar clientes:', err);
+      }
     }
 
     function updateCalculation() {
@@ -526,8 +593,15 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="loading"></span> Lançando...';
 
-      const sellerId = document.getElementById('sellerId').value;
-      const customerId = document.getElementById('customerId').value;
+      const sellerId = document.getElementById('sellerIdDisplay').value || document.getElementById('sellerId').value;
+      const customerId = document.getElementById('customerIdDisplay').value || document.getElementById('customerId').value;
+
+      if (!sellerId || !customerId) {
+        showMessage('❌ Selecione vendedor e cliente', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Lançar Venda';
+        return;
+      }
       const netAmount = parseFloat(document.getElementById('netAmount').value);
       const commissionPercentage = parseFloat(document.getElementById('commissionPercentage').value) || 10;
 
