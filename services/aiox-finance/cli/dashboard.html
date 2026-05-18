@@ -457,6 +457,7 @@
       <div class="tabs">
         <button class="tab active" onclick="switchTab('sales')">📊 Vendas</button>
         <button class="tab" onclick="switchTab('commissions')">💰 Comissões</button>
+        <button class="tab" onclick="switchTab('dashboard')">📈 Dashboard Mensal</button>
       </div>
 
       <div id="sales" class="tab-content active">
@@ -489,10 +490,31 @@
         <h2>Comissões Criadas Automaticamente</h2>
         <div id="commissionsTable"></div>
       </div>
+
+      <div id="dashboard" class="tab-content">
+        <h2>Dashboard Mensal</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+          <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #000;">Vendas por Mês</h3>
+            <canvas id="salesChart" style="max-height: 300px;"></canvas>
+          </div>
+          <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 15px; color: #000;">Comissões por Mês</h3>
+            <canvas id="commissionsChart" style="max-height: 300px;"></canvas>
+          </div>
+        </div>
+
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="margin-bottom: 15px; color: #000;">Resumo Mensal</h3>
+          <div id="monthlyTable"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script>
     let supabase = null;
 
@@ -694,10 +716,177 @@
         renderSales(sales || []);
         renderCommissions(commissions || []);
         updateStats(sales || [], commissions || []);
+        loadMonthlyDashboard();
 
       } catch (err) {
         console.error('Erro ao carregar:', err);
       }
+    }
+
+    async function loadMonthlyDashboard() {
+      const client = getSupabaseClient();
+      if (!client) return;
+
+      try {
+        const { data: sales, error: salesError } = await client
+          .from('sales')
+          .select('net_amount, created_at')
+          .order('created_at', { ascending: true });
+
+        const { data: commissions, error: commError } = await client
+          .from('commissions')
+          .select('amount, created_at')
+          .order('created_at', { ascending: true });
+
+        if (salesError) throw salesError;
+        if (commError) throw commError;
+
+        const monthlyData = aggregateMonthlyData(sales || [], commissions || []);
+        renderMonthlyCharts(monthlyData);
+        renderMonthlySummary(monthlyData);
+
+      } catch (err) {
+        console.error('Erro ao carregar dashboard mensal:', err);
+      }
+    }
+
+    function aggregateMonthlyData(sales, commissions) {
+      const months = {};
+      const now = new Date();
+
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = date.toLocaleString('pt-BR', { month: 'short', year: 'numeric' });
+        months[key] = { sales: 0, commissions: 0, date };
+      }
+
+      sales.forEach(sale => {
+        const date = new Date(sale.created_at);
+        const key = date.toLocaleString('pt-BR', { month: 'short', year: 'numeric' });
+        if (months[key]) {
+          months[key].sales += parseFloat(sale.net_amount || 0);
+        }
+      });
+
+      commissions.forEach(comm => {
+        const date = new Date(comm.created_at);
+        const key = date.toLocaleString('pt-BR', { month: 'short', year: 'numeric' });
+        if (months[key]) {
+          months[key].commissions += parseFloat(comm.amount || 0);
+        }
+      });
+
+      return months;
+    }
+
+    function renderMonthlyCharts(monthlyData) {
+      const labels = Object.keys(monthlyData);
+      const salesData = labels.map(label => monthlyData[label].sales);
+      const commissionsData = labels.map(label => monthlyData[label].commissions);
+
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      };
+
+      // Sales Chart
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      if (window.salesChartInstance) window.salesChartInstance.destroy();
+      window.salesChartInstance = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Vendas (R$)',
+            data: salesData,
+            borderColor: '#000',
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#000',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Commissions Chart
+      const commissionsCtx = document.getElementById('commissionsChart').getContext('2d');
+      if (window.commissionsChartInstance) window.commissionsChartInstance.destroy();
+      window.commissionsChartInstance = new Chart(commissionsCtx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Comissões (R$)',
+            data: commissionsData,
+            borderColor: '#333',
+            backgroundColor: 'rgba(51, 51, 51, 0.05)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 5,
+            pointBackgroundColor: '#333',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: chartOptions
+      });
+    }
+
+    function renderMonthlySummary(monthlyData) {
+      const labels = Object.keys(monthlyData);
+      const container = document.getElementById('monthlyTable');
+
+      let html = '<div class="table-wrapper"><table>';
+      html += '<tr><th>Mês</th><th>Vendas (R$)</th><th>Variação %</th><th>Comissões (R$)</th><th>Variação %</th></tr>';
+
+      let prevSales = null;
+      let prevCommissions = null;
+
+      labels.forEach((label, index) => {
+        const data = monthlyData[label];
+        const sales = data.sales;
+        const commissions = data.commissions;
+
+        const salesVariation = prevSales !== null && prevSales > 0
+          ? (((sales - prevSales) / prevSales) * 100).toFixed(1)
+          : '-';
+        const commissionsVariation = prevCommissions !== null && prevCommissions > 0
+          ? (((commissions - prevCommissions) / prevCommissions) * 100).toFixed(1)
+          : '-';
+
+        const salesColor = salesVariation === '-' ? '#999' : (salesVariation >= 0 ? '#28a745' : '#dc3545');
+        const commissionColor = commissionsVariation === '-' ? '#999' : (commissionsVariation >= 0 ? '#28a745' : '#dc3545');
+
+        html += `<tr>
+          <td style="font-weight: 600;">${label}</td>
+          <td class="money">R$ ${sales.toFixed(2)}</td>
+          <td style="color: ${salesColor}; font-weight: 600;">${salesVariation === '-' ? '-' : (salesVariation >= 0 ? '+' : '') + salesVariation + '%'}</td>
+          <td class="money">R$ ${commissions.toFixed(2)}</td>
+          <td style="color: ${commissionColor}; font-weight: 600;">${commissionsVariation === '-' ? '-' : (commissionsVariation >= 0 ? '+' : '') + commissionsVariation + '%'}</td>
+        </tr>`;
+
+        prevSales = sales > 0 ? sales : prevSales;
+        prevCommissions = commissions > 0 ? commissions : prevCommissions;
+      });
+
+      html += '</table></div>';
+      container.innerHTML = html;
     }
 
     function renderSales(sales) {
