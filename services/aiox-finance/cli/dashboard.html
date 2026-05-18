@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>💰 AIOX Sales & Commission Dashboard</title>
+  <title>💰 AIOX Vendas e Comissão - Dashboard</title>
   <style>
     * {
       margin: 0;
@@ -337,7 +337,7 @@
       <div class="logo-section">
         <div class="logo">GPSX</div>
         <div class="header-text">
-          <h1>💰 AIOX Sales & Commission</h1>
+          <h1>💰 AIOX Vendas e Comissão</h1>
           <p class="subtitle">Lançamento de Vendas + Comissão Automática</p>
         </div>
       </div>
@@ -356,7 +356,7 @@
       </div>
       <div class="stat-box">
         <div class="stat-number" id="totalCommissionValue">R$ 0</div>
-        <div class="stat-label">Valor Total</div>
+        <div class="stat-label">Comissão Total</div>
       </div>
     </div>
 
@@ -366,18 +366,18 @@
         <form id="saleForm">
           <div class="form-row">
             <div class="form-group">
-              <label>Seller ID *</label>
+              <label>ID do Vendedor *</label>
               <input type="text" id="sellerId" placeholder="uuid-do-vendedor" required>
             </div>
             <div class="form-group">
-              <label>Customer ID *</label>
+              <label>ID do Cliente *</label>
               <input type="text" id="customerId" placeholder="uuid-do-cliente" required>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Valor Líquido (BRL) *</label>
+              <label>Valor Líquido (R$) *</label>
               <input type="number" id="netAmount" placeholder="850.00" step="0.01" required>
             </div>
             <div class="form-group">
@@ -391,11 +391,11 @@
               <label>Método de Pagamento</label>
               <select id="paymentMethod">
                 <option>PIX</option>
-                <option>CREDIT_CARD</option>
-                <option>DEBIT_CARD</option>
-                <option>BANK_TRANSFER</option>
-                <option>CHECK</option>
-                <option>OTHER</option>
+                <option>CARTÃO_CRÉDITO</option>
+                <option>CARTÃO_DÉBITO</option>
+                <option>TRANSFERÊNCIA_BANCÁRIA</option>
+                <option>CHEQUE</option>
+                <option>OUTRO</option>
               </select>
             </div>
             <div class="form-group">
@@ -410,7 +410,7 @@
               <span id="calcNet">R$ 0.00</span>
             </div>
             <div class="calc-row">
-              <span>📊 Comissão (em tempo real):</span>
+              <span>📊 Comissão (cálculo em tempo real):</span>
               <span id="calcCommission">R$ 0.00</span>
             </div>
           </div>
@@ -423,13 +423,13 @@
         <h2>⚙️ Configuração</h2>
 
         <div class="form-group">
-          <label>Supabase URL</label>
-          <input type="text" id="supabaseUrl" placeholder="https://seu-project.supabase.co" value="https://your-project.supabase.co">
+          <label>URL do Supabase</label>
+          <input type="text" id="supabaseUrl" placeholder="https://seu-projeto.supabase.co" value="https://your-project.supabase.co">
         </div>
 
         <div class="form-group">
-          <label>Supabase Anon Key</label>
-          <input type="password" id="supabaseKey" placeholder="sua-chave-anon" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+          <label>Chave Anon do Supabase</label>
+          <input type="password" id="supabaseKey" placeholder="sua-chave-anonima" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
         </div>
 
         <button onclick="testConnection()" style="margin-bottom: 15px;">🔗 Testar Conexão</button>
@@ -439,7 +439,7 @@
             <strong>Como configurar:</strong><br>
             1. Acesse <a href="https://supabase.com" target="_blank" style="color: #000;">supabase.com</a><br>
             2. Crie um projeto ou use um existente<br>
-            3. Copie a URL e Anon Key<br>
+            3. Copie a URL e Chave Anon<br>
             4. Cole nos campos acima<br>
             5. Clique em "Testar Conexão"
           </p>
@@ -459,7 +459,7 @@
       </div>
 
       <div id="commissions" class="tab-content">
-        <h2>Comissões Automáticas</h2>
+        <h2>Comissões Criadas Automaticamente</h2>
         <div id="commissionsTable"></div>
       </div>
     </div>
@@ -483,7 +483,7 @@
       const key = document.getElementById('supabaseKey').value;
 
       if (!url || !key || url === 'https://your-project.supabase.co') {
-        showMessage('Configure Supabase URL e Key primeiro', 'error');
+        showMessage('Configure a URL do Supabase e a Chave Anon primeiro', 'error');
         return null;
       }
 
@@ -599,14 +599,15 @@
       }
 
       let html = '<div class="table-wrapper"><table>';
-      html += '<tr><th>ID</th><th>Seller</th><th>Líquido</th><th>Status</th><th>Data</th></tr>';
+      html += '<tr><th>ID</th><th>Vendedor</th><th>Líquido</th><th>Status</th><th>Data</th></tr>';
 
       sales.forEach(sale => {
+        const statusLabel = sale.status === 'PENDING' ? 'PENDENTE' : sale.status === 'APPROVED' ? 'APROVADA' : sale.status;
         html += `<tr>
           <td><code style="font-size: 0.85em;">${sale.id.substring(0, 8)}</code></td>
           <td><code style="font-size: 0.85em;">${sale.seller_id.substring(0, 8)}</code></td>
           <td class="money">R$ ${parseFloat(sale.net_amount).toFixed(2)}</td>
-          <td><span class="status ${sale.status.toLowerCase()}">${sale.status}</span></td>
+          <td><span class="status ${sale.status.toLowerCase()}">${statusLabel}</span></td>
           <td style="font-size: 0.9em;">${new Date(sale.created_at).toLocaleDateString('pt-BR')}</td>
         </tr>`;
       });
@@ -624,15 +625,16 @@
       }
 
       let html = '<div class="table-wrapper"><table>';
-      html += '<tr><th>ID</th><th>Seller</th><th>Comissão</th><th>%</th><th>Status</th></tr>';
+      html += '<tr><th>ID</th><th>Vendedor</th><th>Comissão</th><th>%</th><th>Status</th></tr>';
 
       commissions.forEach(comm => {
+        const statusLabel = comm.status === 'PENDING' ? 'PENDENTE' : comm.status === 'APPROVED' ? 'APROVADA' : comm.status === 'PAID' ? 'PAGA' : comm.status;
         html += `<tr>
           <td><code style="font-size: 0.85em;">${comm.id.substring(0, 8)}</code></td>
           <td><code style="font-size: 0.85em;">${comm.seller_id.substring(0, 8)}</code></td>
           <td class="money">R$ ${parseFloat(comm.amount).toFixed(2)}</td>
           <td>${comm.percentage}%</td>
-          <td><span class="status ${comm.status.toLowerCase()}">${comm.status}</span></td>
+          <td><span class="status ${comm.status.toLowerCase()}">${statusLabel}</span></td>
         </tr>`;
       });
 
